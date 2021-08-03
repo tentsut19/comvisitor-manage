@@ -1,4 +1,4 @@
-package th.co.infinitait.comvisitor.model.response.cardregister;
+package th.co.infinitait.comvisitor.model.response;
 
 import lombok.*;
 
@@ -11,6 +11,7 @@ import java.util.Date;
 @Setter
 public class CardRegisterResponse {
     private Long id;
+    private String errorMessage;
     private String code;
     private String pathQr;
     private String urlQr;

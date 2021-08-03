@@ -7,8 +7,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import th.co.infinitait.comvisitor.entity.CardRegisterEntity;
 import th.co.infinitait.comvisitor.exception.NotFoundException;
-import th.co.infinitait.comvisitor.model.request.activity.ActivityRequest;
-import th.co.infinitait.comvisitor.model.response.cardregister.CardRegisterResponse;
+import th.co.infinitait.comvisitor.model.request.CardRegisterRequest;
+import th.co.infinitait.comvisitor.model.response.CardRegisterResponse;
 import th.co.infinitait.comvisitor.repository.CardRegisterRepository;
 
 import java.util.ArrayList;
@@ -23,16 +23,16 @@ import java.util.function.Function;
 public class CardRegisterService {
     private final CardRegisterRepository cardRegisterRepository;
 
-    public CardRegisterResponse createActivity(ActivityRequest request, String organizationUser) {
+    public CardRegisterResponse createActivity(CardRegisterRequest request, String organizationUser) {
         Long activityId = create(request,organizationUser);
         return getActivityById(activityId);
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public Long create(ActivityRequest request, String organizationUser) {
+    public Long create(CardRegisterRequest request, String organizationUser) {
 
         CardRegisterEntity cardRegisterEntity = CardRegisterEntity.builder()
-                .firstName(request.getActivityName())
+                .firstName(request.getFirstName())
                 .createdAt(new Date())
                 .createdBy(organizationUser)
                 .build();
@@ -53,12 +53,12 @@ public class CardRegisterService {
 
     public List<CardRegisterResponse> getByDepartmentId(Long departmentId){
         List<CardRegisterResponse> cardRegisterResponseList = new ArrayList<>();
-        List<CardRegisterEntity> cardRegisterEntityList = cardRegisterRepository.findByDepartmentId(departmentId);
-        if(!CollectionUtils.isEmpty(cardRegisterEntityList)){
-            cardRegisterEntityList.forEach(cardRegisterEntity -> {
-                cardRegisterResponseList.add(toActivityResponse(cardRegisterEntity));
-            });
-        }
+//        List<CardRegisterEntity> cardRegisterEntityList = cardRegisterRepository.findByDepartmentId(departmentId);
+//        if(!CollectionUtils.isEmpty(cardRegisterEntityList)){
+//            cardRegisterEntityList.forEach(cardRegisterEntity -> {
+//                cardRegisterResponseList.add(toActivityResponse(cardRegisterEntity));
+//            });
+//        }
         return cardRegisterResponseList;
     }
 
