@@ -21,7 +21,7 @@ storage-location: classpath:/reports
 report-generate-path: ${user.home}/temp/pdf
 
 server:
-  port: ${PORT:8091}
+  port: ${PORT:8092}
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}

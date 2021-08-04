@@ -12,6 +12,7 @@ import th.co.infinitait.comvisitor.model.request.CardRegisterRequest;
 import th.co.infinitait.comvisitor.model.response.CardRegisterResponse;
 import th.co.infinitait.comvisitor.repository.*;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -34,16 +35,12 @@ public class ExcelService {
     private final FileManagerRepository fileManagerRepository;
     private final CabsatPayload cabsatPayload;
 
-    public List<CardRegisterResponse> load(MultipartFile file, Long cardVisitorTemplateId, String sheetName) {
-        try {
-            String formattedDateRun = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
-            String organizationUser = "migrate-"+formattedDateRun;
-            List<CardRegisterRequest> cardRegisterRequestList = excelHelperService.excelToMap(file.getInputStream(), sheetName);
-            log.info("cardRegisterRequestList : {}",cardRegisterRequestList.size());
-            return create(cardRegisterRequestList,organizationUser,cardVisitorTemplateId);
-        } catch (Exception e) {
-            throw new RuntimeException("Fail to store excel data: " + e.getMessage());
-        }
+    public List<CardRegisterResponse> load(MultipartFile file, Long cardVisitorTemplateId, String sheetName) throws IOException {
+        String formattedDateRun = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+        String organizationUser = "migrate-"+formattedDateRun;
+        List<CardRegisterRequest> cardRegisterRequestList = excelHelperService.excelToMap(file.getInputStream(), sheetName);
+        log.info("cardRegisterRequestList : {}",cardRegisterRequestList.size());
+        return create(cardRegisterRequestList,organizationUser,cardVisitorTemplateId);
     }
 
     public List<CardRegisterResponse> create(List<CardRegisterRequest> cardRegisterRequestList, String organizationUser, Long cardVisitorTemplateId){

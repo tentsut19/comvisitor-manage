@@ -127,7 +127,7 @@ public class ExcelHelperService {
                 result = cell.getStringValue();
                 break;
             case NUMERIC:
-                result = DoubleUtil.toString2DecimalFormat(cell.getNumberValue());
+                result = DoubleUtil.toString1DecimalFormat(cell.getNumberValue());
                 break;
             case BOOLEAN:
                 result = cell.getBooleanValue()+"";

@@ -27,13 +27,12 @@ public class UploadExcelController {
                                                                  @RequestParam("card_visitor_template_id") Long cardVisitorTemplateId,
                                                                  @RequestParam("sheet_name") String sheetName) {
         String message = "";
-        if (excelHelperService.hasExcelFormat(file)) { // card_visitor_template_id
+        if (excelHelperService.hasExcelFormat(file)) {
             try {
                 return ResponseEntity.ok(fileService.load(file,cardVisitorTemplateId,sheetName));
             } catch (Exception e) {
                 log.error(e.getMessage(),e);
-                message = "Could not upload the file: " + file.getOriginalFilename() + "!";
-                throw new NotFoundException(message);
+                throw new NotFoundException(e.getMessage());
             }
         }
         message = "Please upload an excel file!";
