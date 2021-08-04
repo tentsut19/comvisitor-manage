@@ -53,20 +53,15 @@ public class ExcelService {
         if(!CollectionUtils.isEmpty(cardRegisterRequestList)){
             for(CardRegisterRequest cardRegisterRequest:cardRegisterRequestList){
                 try {
-                    CardRegisterEntity cardRegisterEntity = new CardRegisterEntity();
+                    List<CardRegisterEntity> cardRegisterEntityList = cardRegisterRepository.findByFirstNameAndLastNameAndCustomerId(cardRegisterRequest.getFirstName(),cardRegisterRequest.getLastName(),customerId);
+                    if(CollectionUtils.isEmpty(cardRegisterEntityList)){
+                        CardRegisterEntity cardRegisterEntity = new CardRegisterEntity();
+                        cardRegisterEntity.setCreatedBy(organizationUser);
+                        cardRegisterEntity.setCreatedAt(new Date());
 
-                    Optional<CardRegisterEntity> optionalCardRegister = cardRegisterRepository.findByFirstNameAndLastNameAndCustomerId(cardRegisterRequest.getFirstName(),cardRegisterRequest.getLastName(),customerId);
-                    if(optionalCardRegister.isPresent()){
-                        cardRegisterEntity = optionalCardRegister.get();
-                        cardRegisterEntity.setUpdatedAt(new Date());
-                        cardRegisterEntity.setUpdatedBy(organizationUser);
-
-                        Optional<CustomerEntity> optionalCustomer = customerRepository.findById(customerId);
-                        optionalCustomer.ifPresent(cardRegisterEntity::setCustomer);
-                    }else{
-                        List<CardRegisterEntity> cardRegisterEntities = cardRegisterRepository.findByCodeAndCustomerId(cardRegisterRequest.getCode(),customerId);
-                        if(!CollectionUtils.isEmpty(cardRegisterEntities)){
-                            for(CardRegisterEntity cardRegister:cardRegisterEntities) {
+                        List<CardRegisterEntity> cardRegisterEntities = cardRegisterRepository.findByCodeAndCustomerId(cardRegisterRequest.getCode(), customerId);
+                        if (!CollectionUtils.isEmpty(cardRegisterEntities)) {
+                            for (CardRegisterEntity cardRegister : cardRegisterEntities) {
                                 CardRegisterResponse cardRegisterResponse = new CardRegisterResponse();
                                 cardRegisterResponse.setErrorMessage(cardRegisterRequest.getCode() + " รหัสบัตรนี้ซ้ำกับข้อมูลของคุณ " +
                                         cardRegister.getFirstName() + " " + cardRegister.getLastName());
@@ -76,49 +71,23 @@ public class ExcelService {
                                 cardRegisterResponse.setLastName(cardRegisterRequest.getLastName());
                                 cardRegisterResponseList.add(cardRegisterResponse);
                             }
-                            continue;
                         }
-                        cardRegisterEntity.setCreatedAt(new Date());
-                        cardRegisterEntity.setCreatedBy(organizationUser);
 
-                        Optional<CustomerEntity> optionalCustomer = customerRepository.findById(customerId);
-                        optionalCustomer.ifPresent(cardRegisterEntity::setCustomer);
-
-                        FileManagerEntity fileManagerEntity = new FileManagerEntity();
-                        fileManagerEntity.setNameDisplay("default.jpeg");
-                        fileManagerEntity.setNameFile("default.jpeg");
-                        fileManagerEntity.setPath("images/register_card/default/0.jpg");
-                        fileManagerEntity.setSeq(0);
-                        fileManagerEntity.setType("register_card");
-                        fileManagerEntity.setUrl("https://comvisitor-uat-bucket.s3.ap-southeast-1.amazonaws.com/images/default/0.jpeg");
-                        optionalCustomer.ifPresent(fileManagerEntity::setCustomer);
-                        fileManagerEntity.setCreatedAt(new Date());
-                        fileManagerEntity.setCreatedBy(organizationUser);
-                        fileManagerRepository.save(fileManagerEntity);
-
-                        cardRegisterEntity.setFileManager(fileManagerEntity);
+                        CardRegisterResponse cardRegisterResponse = createOrUpdateCardRegister(cardRegisterEntity,cardRegisterRequest,customerId,organizationUser,cardVisitorTemplateId);
+                        if(cardRegisterResponse != null) {
+                            cardRegisterResponseList.add(cardRegisterResponse);
+                        }
+                    }else{
+                        for(CardRegisterEntity cardRegisterEntity:cardRegisterEntityList){
+                            cardRegisterEntity.setUpdatedBy(organizationUser);
+                            cardRegisterEntity.setUpdatedAt(new Date());
+                            CardRegisterResponse cardRegisterResponse = createOrUpdateCardRegister(cardRegisterEntity,cardRegisterRequest,customerId,organizationUser,cardVisitorTemplateId);
+                            if(cardRegisterResponse != null) {
+                                cardRegisterResponseList.add(cardRegisterResponse);
+                            }
+                        }
                     }
 
-                    cardRegisterEntity.setCode(cardRegisterRequest.getCode());
-                    cardRegisterEntity.setCarNo(cardRegisterRequest.getCarNo());
-                    cardRegisterEntity.setFirstName(cardRegisterRequest.getFirstName());
-                    cardRegisterEntity.setLastName(cardRegisterRequest.getLastName());
-                    cardRegisterEntity.setIssueDate(cardRegisterRequest.getIssueDate());
-                    cardRegisterEntity.setExpiredDate(cardRegisterRequest.getExpiredDate());
-
-                    Optional<CompanyContractEntity> optionalCompanyContract = companyContractRepository.findByNameAndCustomerId(cardRegisterRequest.getCompanyContract(),customerId);
-                    optionalCompanyContract.ifPresent(cardRegisterEntity::setCompanyContract);
-
-                    Optional<DepartmentEntity> optionalDepartment = departmentRepository.findByNameAndCustomerId(cardRegisterRequest.getDepartment(),customerId);
-                    optionalDepartment.ifPresent(cardRegisterEntity::setDepartment);
-
-                    Optional<CardTypeEntity> optionalCardType = cardTypeRepository.findByNameAndCustomerId(cardRegisterRequest.getCardType(),customerId);
-                    optionalCardType.ifPresent(cardRegisterEntity::setCardType);
-
-                    Optional<CardVisitorTemplateEntity> optionalCardVisitorTemplate = cardVisitorTemplateRepository.findByIdAndCustomerId(cardVisitorTemplateId,customerId);
-                    optionalCardVisitorTemplate.ifPresent(cardRegisterEntity::setCardVisitorTemplate);
-
-                    cardRegisterRepository.save(cardRegisterEntity);
                 }catch (Exception e){
                     CardRegisterResponse cardRegisterResponse = new CardRegisterResponse();
                     cardRegisterResponse.setErrorMessage(e.getMessage());
@@ -132,6 +101,88 @@ public class ExcelService {
         }
         log.info("fail size : {}",cardRegisterResponseList.size());
         return cardRegisterResponseList;
+    }
+
+    public CardRegisterResponse createOrUpdateCardRegister(CardRegisterEntity cardRegisterEntity,
+                                                                 CardRegisterRequest cardRegisterRequest,
+                                                                 Long customerId,
+                                                                 String organizationUser,
+                                                                 Long cardVisitorTemplateId) {
+        boolean isError = false;
+        String errorMessage = "";
+        Optional<CustomerEntity> optionalCustomer = customerRepository.findById(customerId);
+        optionalCustomer.ifPresent(cardRegisterEntity::setCustomer);
+
+        FileManagerEntity fileManagerEntity = new FileManagerEntity();
+        fileManagerEntity.setNameDisplay("default.jpeg");
+        fileManagerEntity.setNameFile("default.jpeg");
+        fileManagerEntity.setPath("images/register_card/default/0.jpg");
+        fileManagerEntity.setSeq(0);
+        fileManagerEntity.setType("register_card");
+        fileManagerEntity.setUrl("https://comvisitor-uat-bucket.s3.ap-southeast-1.amazonaws.com/images/default/0.jpeg");
+        optionalCustomer.ifPresent(fileManagerEntity::setCustomer);
+        fileManagerEntity.setCreatedAt(new Date());
+        fileManagerEntity.setCreatedBy(organizationUser);
+        fileManagerRepository.save(fileManagerEntity);
+
+        cardRegisterEntity.setFileManager(fileManagerEntity);
+
+        cardRegisterEntity.setCode(cardRegisterRequest.getCode());
+        cardRegisterEntity.setCarNo(cardRegisterRequest.getCarNo());
+        cardRegisterEntity.setFirstName(cardRegisterRequest.getFirstName());
+        cardRegisterEntity.setLastName(cardRegisterRequest.getLastName());
+        cardRegisterEntity.setIssueDate(cardRegisterRequest.getIssueDate());
+        cardRegisterEntity.setExpiredDate(cardRegisterRequest.getExpiredDate());
+
+        Optional<CompanyContractEntity> optionalCompanyContract = companyContractRepository.findByNameAndCustomerId(cardRegisterRequest.getCompanyContract(), customerId);
+        if(optionalCompanyContract.isPresent()){
+            cardRegisterEntity.setCompanyContract(optionalCompanyContract.get());
+        }else{
+            isError = true;
+            errorMessage += "\nจากบริษัท : " + cardRegisterRequest.getCompanyContract() + " ไม่มีในระบบ";
+        }
+
+        Optional<DepartmentEntity> optionalDepartment = departmentRepository.findByNameAndCustomerId(cardRegisterRequest.getDepartment(), customerId);
+        if(optionalDepartment.isPresent()){
+            cardRegisterEntity.setDepartment(optionalDepartment.get());
+        }else{
+            isError = true;
+            errorMessage += "\nแผนกที่ติดต่อ : " + cardRegisterRequest.getDepartment() + " ไม่มีในระบบ";
+        }
+
+        Optional<CardTypeEntity> optionalCardType = cardTypeRepository.findByNameAndCustomerId(cardRegisterRequest.getCardType(), customerId);
+        if(optionalCardType.isPresent()){
+            cardRegisterEntity.setCardType(optionalCardType.get());
+        }else{
+            isError = true;
+            errorMessage += "\nประเภทบัตร : " + cardRegisterRequest.getCardType() + " ไม่มีในระบบ";
+        }
+
+        Optional<CardVisitorTemplateEntity> optionalCardVisitorTemplate = cardVisitorTemplateRepository.findByIdAndCustomerId(cardVisitorTemplateId, customerId);
+        if(optionalCardVisitorTemplate.isPresent()){
+            cardRegisterEntity.setCardVisitorTemplate(optionalCardVisitorTemplate.get());
+        }else{
+            isError = true;
+            errorMessage += "\nTemplate Register Card : " + cardVisitorTemplateId + " ไม่มีในระบบ";
+        }
+
+        if(isError){
+            return setErrorMessage(cardRegisterRequest,errorMessage);
+        }else{
+            cardRegisterRepository.save(cardRegisterEntity);
+            return null;
+        }
+    }
+
+    public CardRegisterResponse setErrorMessage(CardRegisterRequest cardRegisterRequest, String errorMessage){
+        CardRegisterResponse cardRegisterResponse = new CardRegisterResponse();
+        cardRegisterResponse.setErrorMessage(errorMessage);
+        cardRegisterResponse.setCode(cardRegisterRequest.getCode());
+        cardRegisterResponse.setCarNo(cardRegisterRequest.getCarNo());
+        cardRegisterResponse.setFirstName(cardRegisterRequest.getFirstName());
+        cardRegisterResponse.setLastName(cardRegisterRequest.getLastName());
+
+        return cardRegisterResponse;
     }
 
 }

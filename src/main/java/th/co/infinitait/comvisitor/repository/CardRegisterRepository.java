@@ -14,7 +14,7 @@ public interface CardRegisterRepository extends JpaRepository<CardRegisterEntity
             "WHERE personnel_id = :personnelId ", nativeQuery = true)
     Optional<CardRegisterEntity> findByPersonnelId(@Param("personnelId")Long personnelId);
 
-    Optional<CardRegisterEntity> findByFirstNameAndLastNameAndCustomerId(
+    List<CardRegisterEntity> findByFirstNameAndLastNameAndCustomerId(
             @Param("firstName")String firstName
             ,@Param("lastName")String lastName
             ,@Param("customerId")Long customerId);

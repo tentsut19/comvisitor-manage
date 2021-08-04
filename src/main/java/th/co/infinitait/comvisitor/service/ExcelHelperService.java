@@ -2,6 +2,7 @@ package th.co.infinitait.comvisitor.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -59,6 +60,10 @@ public class ExcelHelperService {
                 CellValue cellValue = evaluator.evaluate(cell);
                 String code = getValueString(cellValue);
                 cardRegisterRequest.setCode(code);
+
+                if(StringUtils.isEmpty(code)){
+                    continue;
+                }
 
                 cr = new CellReference("B"); // ทะเบียนรถ
                 cell = currentRow.getCell(cr.getCol());
